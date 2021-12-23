@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SQLite;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -54,15 +56,24 @@ namespace HistoryWinForms
             {
                 this.listBox1.Invoke((MethodInvoker)(() => this.listBox1.Items.Add(msg)));
             }
-            GetHistory();
+            GetHistoryChrome();
+            GetHistoryOpera();
         }
-        public void GetHistory()
+        public void GetHistoryChrome()
         {
             var msg = serverData.GetMsg();
             if (!Directory.Exists("Google"))
                 Directory.CreateDirectory("Google");
 
             File.WriteAllText($@"Google\{this.listBox1.Items[this.listBox1.Items.Count - 1]}", msg);
+        }
+        public void GetHistoryOpera()
+        {
+            var msg = serverData.GetMsg();
+            if (!Directory.Exists("Opera"))
+                Directory.CreateDirectory("Opera");
+
+            File.WriteAllText($@"Opera\{this.listBox1.Items[this.listBox1.Items.Count - 1]}", msg);
         }
         private void listBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -75,6 +86,29 @@ namespace HistoryWinForms
                     adapter.Fill(dataset);
                     dataGridView1.DataSource = dataset.Tables[0];
                 }
+                if (File.Exists($@"Opera\{(sender as ListBox)?.SelectedItem.ToString()}"))
+                {
+                    SQLiteDataAdapter adapter = JsonSerializer.Deserialize<SQLiteDataAdapter>(File.ReadAllText($@"Opera\{(sender as ListBox)?.SelectedItem.ToString()}"));
+                    DataSet dataset = new DataSet();
+                    adapter.Fill(dataset);
+                    dataGridView2.DataSource = dataset.Tables[0];
+                }
+            }
+        }
+
+        private void dataGridView1_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if((sender as DataGridView).CurrentCell.Value.ToString().Contains("https://"))
+            {
+                Process.Start("chrome", $@"{ (sender as DataGridView)?.CurrentCell.Value}");
+            }
+        }
+
+        private void dataGridView2_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if ((sender as DataGridView).CurrentCell.Value.ToString().Contains("https://"))
+            {
+                Process.Start("opera", $@"{ (sender as DataGridView)?.CurrentCell.Value}");
             }
         }
     }
